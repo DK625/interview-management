@@ -44,6 +44,13 @@ export const RequestPage = () => {
     const { message: messageApi } = App.useApp();
     const columns = [
         {
+            title: "CODE",
+            dataIndex: "id",
+            key: "id",
+            render: (id: number) => "RQ" + id,
+        },
+
+        {
             title: 'Position',
             dataIndex: 'position',
             key: 'position',
@@ -225,7 +232,7 @@ export const RequestPage = () => {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             fetchRequests(); // Refresh data after creation
             handleClose();
         } catch (error) {
@@ -287,7 +294,7 @@ export const RequestPage = () => {
                                 description: `The request has been successfully deleted.`,
                                 placement: 'topRight',
                             });
-                    
+
                             fetchRequests();
                         } catch (error) {
                             console.error('Error deleting request:', error);
