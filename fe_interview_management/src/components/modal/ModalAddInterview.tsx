@@ -23,6 +23,8 @@ export const ModalAddInterview = (props: any) => {
   const [filteredUsers, setFilteredUsers] = useState([]);
 
 
+  const isDisable = ["Passed", "Reject", "Cancelled"].includes(initialValues?.status)
+
   // Cập nhật khi select candidate hoặc khi edit
   useEffect(() => {
     if (initialValues) {
@@ -170,6 +172,7 @@ export const ModalAddInterview = (props: any) => {
         initialValues={initialValues || { status: 'Invited' }}
         labelCol={{ span: 6 }}
         key={initialValues}
+        disabled={isDisable}
       >
         <div className="w-full flex justify-between">
           <Form.Item
