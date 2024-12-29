@@ -2,9 +2,14 @@
 
 ## playwrite
 
+python -m venv venv (python >=3.8)
+win: venv/Script/activate
+linux: .venv/bin/activate
+pip install -r requirements.txt
 pip install pytest-playwright
 
 playwright install 
+
 
 ### be
 ```
