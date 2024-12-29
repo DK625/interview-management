@@ -44,6 +44,12 @@ export const RequestPage = () => {
     const { message: messageApi } = App.useApp();
     const columns = [
         {
+            title: "RQ-",
+            dataIndex: "id",
+            key: "id",
+            render: (id: number) => "RQ" + id,
+        },
+        {
             title: 'Position',
             dataIndex: 'position',
             key: 'position',
