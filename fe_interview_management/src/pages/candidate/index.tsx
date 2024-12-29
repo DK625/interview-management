@@ -101,6 +101,7 @@ export const CandidatePage = () => {
             setSelectedCandidate({ ...record, dob: dayjs(record.dob), skills: record.skills.map((skill: string) => ({ label: skill, value: skill })) });
             setIsModalVisible(true);
           }}
+          showAction={role !== "Interviewer"}
         />
       </div>
     </div>

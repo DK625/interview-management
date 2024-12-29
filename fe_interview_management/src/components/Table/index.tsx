@@ -12,6 +12,7 @@ interface GenericTableProps<T> {
   pagination?: TablePaginationConfig,
   enableSelection?: boolean;
   onSelectionChange?: (selectedRowKeys: React.Key[], selectedRows: T[]) => void;
+  showAction?: boolean;
 }
 
 const GenericTable = <T extends {}>({
@@ -23,11 +24,12 @@ const GenericTable = <T extends {}>({
   enableAction = true,
   pagination,
   enableSelection,
-  onSelectionChange
+  onSelectionChange,
+  showAction = true,
 }: GenericTableProps<T>) => {
   const { role } = useAuth();
 
-  const actionColumn = [
+  const actionColumn = showAction ? [
     {
       title: 'Actions',
       key: 'actions',
@@ -69,7 +71,7 @@ const GenericTable = <T extends {}>({
         </Space>
       ),
     },
-  ]
+  ] : []
 
   const indexedColumns = [
     {

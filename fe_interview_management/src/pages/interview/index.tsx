@@ -170,7 +170,7 @@ export const InterviewPage = () => {
             setIsModalVisible(true);
           }}
           onDeleteItem={handleDelete}
-
+          showAction={role !== "Interviewer"}
         />
       </div>
     </div>

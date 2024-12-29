@@ -130,6 +130,7 @@ export const ManageJob = () => {
             setSelectedJob({ ...data, end_date: dayjs(data.end_date), start_date: dayjs(data.start_date), skills: data.skills.map((skill: string) => ({ label: skill, value: skill })) });
             setIsModalVisible(true);
           }}
+          showAction={role !== "Interviewer"}
         />
       </div>
     </div>
