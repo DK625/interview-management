@@ -45,44 +45,44 @@ export const ModalAddJob = (props: any) => {
     }
   };
 
-useEffect(() => {
-  const getPositions = async () => {
-    try {
-      const token = localStorage.getItem('token');
+  useEffect(() => {
+    const getPositions = async () => {
+      try {
+        const token = localStorage.getItem('token');
 
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch('http://103.56.158.135:8086/api/v1/request', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`, // Thêm token vào header Authorization
-          'Accept': 'application/json' // Đảm bảo yêu cầu này trả về JSON
+        if (!token) {
+          throw new Error('No token found');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch positions');
+        const response = await fetch('http://103.56.158.135:8086/api/v1/request', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`, // Thêm token vào header Authorization
+            'Accept': 'application/json' // Đảm bảo yêu cầu này trả về JSON
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch positions');
+        }
+
+        const responseData = await response.json();
+
+        // Lọc các vị trí có trạng thái "Approved"
+        const approvedPositions = responseData.data.results
+        // Cập nhật state position với danh sách đã lọc
+        setPosition(approvedPositions);
+      } catch (error) {
+        console.error('Error fetching positions:', error);
       }
+    };
 
-      const responseData = await response.json();
-
-      // Lọc các vị trí có trạng thái "Approved"
-      const approvedPositions = responseData.data.results
-      // Cập nhật state position với danh sách đã lọc
-      setPosition(approvedPositions);
-    } catch (error) {
-      console.error('Error fetching positions:', error);
+    if (department) {
+      getPositions(); // Chỉ gọi khi department có giá trị
     }
-  };
+  }, [department]);
 
-  if (department) {
-    getPositions(); // Chỉ gọi khi department có giá trị
-  }
-}, [department]);
-
-console.log("Position Options:", positionOptions);
+  console.log("Position Options:", positionOptions);
 
 
   const selectAfter = (
@@ -158,7 +158,7 @@ console.log("Position Options:", positionOptions);
           >
             <Select
               data-testid="select-job-position"
-              options={positionOptions} />
+              options={positionOptions} onChange={(val) => handleChoosePosition(val)} />
             {console.log("Position Options:", positionOptions)}
           </Form.Item>
         </div>

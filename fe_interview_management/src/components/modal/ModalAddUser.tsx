@@ -128,7 +128,9 @@ export const ModalAddUser = (props: any) => {
             name="username"
             label="Username"
             className="w-1/2"
-            required
+            // required
+            rules={[{ required: true, message: 'Please enter username' }]}
+
 
           >
             <Input />
