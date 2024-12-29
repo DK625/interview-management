@@ -96,7 +96,21 @@ const Home = () => {
       console.log('Found pending interviews:', pendingInterviews);
 
       if (pendingInterviews?.length > 0) {
-        message.info('You have a pending interview waiting for your response.');
+        message.info(
+          <div className="text-start">
+            <p>
+              You have {pendingInterviews.length} pending interview waiting for
+              your response:
+            </p>
+            <ul className="list-disc pl-4">
+              {pendingInterviews.map((item) => (
+                <li key={item.id}>{`${item.candidate.full_name} in ${
+                  item.location
+                } at ${dayjs(item.schedule_date).format("DD-MM-YYYY")}`}</li>
+              ))}
+            </ul>
+          </div>
+        );
       }
       // Chỉ set hasChecked sau khi đã có data và check xong
       setHasChecked(true);
