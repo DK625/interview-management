@@ -6,6 +6,7 @@ import { JobLevel, JobStatus, UserDepartment } from "@/configs/constants.tsx";
 import { Skill } from "@/interfaces/job.interface.ts";
 import { createJob, getJobs, updateJob } from "@/redux/features/jobSlice.ts";
 import moment from "moment";
+import dayjs from "dayjs";
 const statusOptions = Object.entries(JobStatus).map(([key, value]) => ({ label: value, value: key }));
 const jobLevelOptions = Object.entries(JobLevel).map(([key, value]) => ({ label: value, value: key }));
 export const ModalAddJob = (props: any) => {
@@ -19,53 +20,69 @@ export const ModalAddJob = (props: any) => {
   const [form] = Form.useForm();
   const [department, setDepartment] = useState(null)
   const [position, setPosition] = useState([]);
-  const positionOptions = position.map((pos) => ({ label: pos, value: pos }));
+  const positionOptions = position.filter((val) => val.status === "Approved" && val.department === department).map((val) => ({
+    label: val.position + "-RQ" + val.id,
+    value: val.position + "-RQ" + val.id,
+  }));
 
   const handleChooseDepartment = (val) => {
     setDepartment(val);
   };
 
-  useEffect(() => {
-    const getPositions = async () => {
-      try {
-        const token = localStorage.getItem('token');
+  const handleChoosePosition = (val) => {
+    const result = val.match(/RQ(\d+)/);
 
-        if (!token) {
-          throw new Error('No token found');
-        }
+    if (result) {
+      const id = parseInt(result[1], 10);
+      const req = position.find((item) => item.id === id);
 
-        const response = await fetch('http://103.56.158.135:8086/api/v1/request', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`, // Thêm token vào header Authorization
-            'Accept': 'application/json' // Đảm bảo yêu cầu này trả về JSON
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch positions');
-        }
-
-        const responseData = await response.json();
-
-        // Lọc các vị trí có trạng thái "Approved"
-        const approvedPositions = responseData.data.results
-          .filter((val) => val.status === "Approved" && val.department === department)
-          .map((val) => val.position);
-
-        // Cập nhật state position với danh sách đã lọc
-        setPosition(approvedPositions);
-      } catch (error) {
-        console.error('Error fetching positions:', error);
-      }
-    };
-
-    if (department) {
-      getPositions(); // Chỉ gọi khi department có giá trị
+      form.setFieldsValue({
+        level: req.level,
+        start_date: dayjs(req.start_date),
+        end_date: dayjs(req.end_date),
+        status: req.status,
+      });
     }
-  }, [department]);
+  };
 
-  console.log("Position Options:", positionOptions);
+useEffect(() => {
+  const getPositions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      const response = await fetch('http://103.56.158.135:8086/api/v1/request', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Thêm token vào header Authorization
+          'Accept': 'application/json' // Đảm bảo yêu cầu này trả về JSON
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch positions');
+      }
+
+      const responseData = await response.json();
+
+      // Lọc các vị trí có trạng thái "Approved"
+      const approvedPositions = responseData.data.results
+      // Cập nhật state position với danh sách đã lọc
+      setPosition(approvedPositions);
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+    }
+  };
+
+  if (department) {
+    getPositions(); // Chỉ gọi khi department có giá trị
+  }
+}, [department]);
+
+console.log("Position Options:", positionOptions);
 
 
   const selectAfter = (
