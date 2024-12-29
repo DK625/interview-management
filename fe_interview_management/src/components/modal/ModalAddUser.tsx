@@ -128,7 +128,7 @@ export const ModalAddUser = (props: any) => {
             name="username"
             label="Username"
             className="w-1/2"
-
+            required
 
           >
             <Input />
