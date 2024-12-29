@@ -45,11 +45,11 @@ const columns = [
     dataIndex: 'department',
     key: 'department',
   },
-  {
-    title: 'Position',
-    dataIndex: 'position',
-    key: 'position',
-  },
+  // {
+  //   title: 'Position',
+  //   dataIndex: 'position',
+  //   key: 'position',
+  // },
   {
     title: 'Status',
     dataIndex: 'status',
