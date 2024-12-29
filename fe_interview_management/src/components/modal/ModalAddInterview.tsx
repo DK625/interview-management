@@ -232,34 +232,16 @@ export const ModalAddInterview = (props: any) => {
               options={filteredUsers} mode="multiple" />
           </Form.Item>
           <Form.Item
-            name="status"
-            label="Status:"
-            // className="w-1/2"
-            className="w-1/3 mr-5"
-            rules={[{ required: true, message: 'Please enter status' }]}
+            name="location"
+            label="Location:"
+            className="w-1/2 mr-5"
+            rules={[{ required: true, message: 'Please enter location' }]}
           >
-            <Select
-              data-testid="select-interview-status"
-              options={statusOptions}
-              onChange={(value) => {
-                setShowResult(value === 'Interviewed');
-              }}
-
-
+            <Input
+              allowClear
+              placeholder={"Enter location"}
             />
           </Form.Item>
-          {showResult && (
-            <Form.Item
-              name="result"
-              label="Result:"
-              className="w-1/3"
-              rules={[{ required: true, message: 'Please select result' }]}
-            >
-              <Select
-                options={resultOptions}
-              />
-            </Form.Item>
-          )}
         </div>
         <Form.Item
           name="schedule_date"
@@ -296,17 +278,35 @@ export const ModalAddInterview = (props: any) => {
           </Form.Item>
         </div>
         <div className="w-full flex justify-between">
-          <Form.Item
-            name="location"
-            label="Location:"
-            className="w-1/2 mr-5"
-            rules={[{ required: true, message: 'Please enter location' }]}
+        <Form.Item
+            name="status"
+            label="Status:"
+            // className="w-1/2"
+            className="w-1/3 mr-5"
+            rules={[{ required: true, message: 'Please enter status' }]}
           >
-            <Input
-              allowClear
-              placeholder={"Enter location"}
+            <Select
+              data-testid="select-interview-status"
+              options={statusOptions}
+              onChange={(value) => {
+                setShowResult(value === 'Interviewed');
+              }}
+
+
             />
           </Form.Item>
+          {showResult && (
+            <Form.Item
+              name="result"
+              label="Result:"
+              className="w-1/3"
+              rules={[{ required: true, message: 'Please select result' }]}
+            >
+              <Select
+                options={resultOptions}
+              />
+            </Form.Item>
+          )}
           <Form.Item
             name="note"
             label="Note:"
