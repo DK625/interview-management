@@ -12,6 +12,12 @@ import dayjs from "dayjs";
 
 const columns = [
   {
+    title: "CODE",
+    dataIndex: "id",
+    key: "id",
+    render: (id: number) => "JOB" + id,
+},
+  {
     title: 'Job Title',
     dataIndex: 'title',
     key: 'title',

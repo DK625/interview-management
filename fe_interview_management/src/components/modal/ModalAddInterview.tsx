@@ -76,7 +76,7 @@ export const ModalAddInterview = (props: any) => {
     const filteredJobs = jobs.filter(job => job.status === 'Open');
 
     return filteredJobs.map((job) => ({
-      label: job.title,
+      label: job.title + "-JOB" + job.id,
       value: job.id
     }));
   }, [jobs]);
