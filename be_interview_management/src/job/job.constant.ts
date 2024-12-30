@@ -5,6 +5,7 @@ export enum JobStatus {
 }
 export enum JobLevel {
   Fresher = 'Fresher',
+  Middle = 'Middle',
   Junior = 'Junior',
   Senior = 'Senior',
   Leader = 'Leader',
