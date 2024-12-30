@@ -1,5 +1,5 @@
 import { DatePicker, Form, Input, Modal, Select, TimePicker } from "antd";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks.ts";
+import { useAppDispatch, useAppSelector, useAuth } from "@/redux/hooks.ts";
 import { useMemo } from "react";
 import { InterviewStatus, OfferPosition } from "@/configs/constants.tsx";
 import { createInterview, getInterviews, updateInterview } from "@/redux/features/interviewSlice.ts";
@@ -8,6 +8,7 @@ import moment from "moment";
 import { useState, useEffect } from "react";
 
 export const ModalAddInterview = (props: any) => {
+  const { role } = useAuth();
   const { initialValues, handleClose, isOpen } = props;
   const jobs = useAppSelector((state) => state.job.jobs);
   const candidates = useAppSelector((state) => state.candidate.candidates);
@@ -23,7 +24,7 @@ export const ModalAddInterview = (props: any) => {
   const [filteredUsers, setFilteredUsers] = useState([]);
 
 
-  const isDisable = ["Passed", "Reject", "Cancelled"].includes(initialValues?.status)
+  const isDisable = ["Passed", "Failed", "Cancelled"].includes(initialValues?.status) && role !== "Admin"
 
   // Cập nhật khi select candidate hoặc khi edit
   useEffect(() => {
