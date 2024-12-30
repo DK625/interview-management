@@ -13,9 +13,12 @@ import { createCandidate, getCandidates, updateCandidate } from "@/redux/feature
 
 
 export const ModalAddOffer = (props: any) => {
+  const { role } = useAuth();
   const { initialValues, handleClose, isOpen } = props;
   const candidates = useAppSelector((state) => state.candidate.candidates);
   const users = useAppSelector((state) => state.user.users);
+
+  const isDisable = ["Approved offer", "Rejected offer"].includes(initialValues?.status) && role !== "Admin"
 
   const userOptions = useMemo(
     () => users.map((user) => ({ label: user.username, value: user.id })),
@@ -169,6 +172,7 @@ export const ModalAddOffer = (props: any) => {
             console.error('Error:', error);
           }
         }}
+        disabled={isDisable}
         initialValues={initialValues || { currency: "USD" }}
         labelCol={{ span: 6 }}
       >
