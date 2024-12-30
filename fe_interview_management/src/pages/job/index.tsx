@@ -88,6 +88,8 @@ export const ManageJob = () => {
     await dispatch(getJobs({}));
   }
 
+  const jobsData = [...jobs].reverse()
+
   return (
     <div className="bg-white p-10 h-full rounded">
       <Helmet title="Manage Job" />
@@ -128,7 +130,7 @@ export const ManageJob = () => {
       <div className="mt-5">
         <GenericTable
           columns={columns}
-          data={jobs}
+          data={jobsData}
           onDeleteItem={async (data) => { await handleDelete(data.id) }}
           onEditItem={(data) => {
             console.log(data);
