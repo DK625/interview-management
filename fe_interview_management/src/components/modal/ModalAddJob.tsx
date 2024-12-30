@@ -40,7 +40,7 @@ export const ModalAddJob = (props: any) => {
         level: req.level,
         start_date: dayjs(req.start_date),
         end_date: dayjs(req.end_date),
-        status: req.status,
+        status: "Open",
       });
     }
   };
