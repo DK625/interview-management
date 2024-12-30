@@ -52,6 +52,8 @@ export const CandidatePage = () => {
     setSelectedCandidate(undefined);
     setIsModalVisible(false);
   }
+  const candidatesData = [...candidates].reverse()
+
   return (
     <div className="p-10 bg-white h-full rounded">
       <Helmet title="Manage Offer" />
@@ -92,7 +94,7 @@ export const CandidatePage = () => {
       <div className="mt-5">
         <GenericTable
           columns={columns}
-          data={candidates}
+          data={candidatesData}
           onDeleteItem={async (record) => {
             await dispatch(deleteCandidate(record.id));
             await dispatch(getCandidates({}));

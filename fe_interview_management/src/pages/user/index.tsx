@@ -94,6 +94,9 @@ export const ManageUser = () => {
     }
   };
 
+  const usersData = [...users].reverse()
+
+
 
   return (
     console.log('users: ', users),
@@ -135,7 +138,7 @@ export const ManageUser = () => {
       <div className="mt-5">
         <GenericTable
           columns={columns}
-          data={users}
+          data={usersData}
           enableAction={true}
           onEditItem={handleEdit}
           onDeleteItem={handleDelete}
