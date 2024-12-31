@@ -133,7 +133,7 @@ export const ModalAddUser = (props: any) => {
 
 
           >
-            <Input />
+            <Input placeholder="Enter username"/>
           </Form.Item>
         </div>
         <div className="w-full flex justify-between">

@@ -307,6 +307,7 @@ export const ModalAddInterview = (props: any) => {
               rules={[{ required: true, message: 'Please select result' }]}
             >
               <Select
+                data-testid="select-result"
                 options={resultOptions}
               />
             </Form.Item>
