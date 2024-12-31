@@ -61,7 +61,7 @@ const GenericTable = <T extends {}>({
                 e?.stopPropagation();
               }}
             >
-              <Button key="delete" danger id="delete" onClick={(e) => {
+              <Button data-testid={record.id} key="delete" danger id="delete" onClick={(e) => {
                 e.stopPropagation(); // Ensure row click event is not triggered
               }}>
                 <DeleteOutlined id="ic_delete" />
