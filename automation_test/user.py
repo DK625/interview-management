@@ -1,42 +1,146 @@
-from playwright.sync_api import sync_playwright, expect
-import time
+import pytest
+from playwright.sync_api import sync_playwright
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from psycopg2 import Error
-from datetime import datetime, timedelta
+import time
 
 
-class TestUser:
+class TestUserIntegration:
     @classmethod
     def setup_class(cls):
-        """Setup test environment and database connection"""
+        cls.case_create_user_data = [
+            {
+                "input": {
+                    "full_name": "Auto test *user1",
+                    "email": "auto-test-1@gmail.com",
+                    "username": "test01",
+                    "department": "Marketing",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 1"
+                }
+            },
+            {
+                "input": {
+                    "full_name": "Auto test *user2",
+                    "email": "auto-test-2@gmail.com",
+                    "username": "test02",
+                    "department": "AF",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 2"
+                }
+            }
+        ]
+        cls.create_user_db_backup = []
+
+        cls.case_edit_user_data = [
+            {
+                "input": {
+                    "full_name": "Auto test *user3",
+                    "email": "auto-test-3@gmail.com",
+                    "username": "test03",
+                    "department": "Marketing",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 3"
+                },
+                "validate": {
+                    "full_name": "change-Auto test *user3",
+                    "email": "change-auto-test-3@gmail.com",
+                    "username": "change-test03",
+                    "department": "Marketing",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "change-note 3"
+                }
+            },
+            {
+                "input": {
+                    "full_name": "Auto test *user4",
+                    "email": "auto-test-4@gmail.com",
+                    "username": "test04",
+                    "department": "AF",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 4"
+                },
+                "validate": {
+                    "full_name": "change-Auto test *user4",
+                    "email": "change-auto-test-4@gmail.com",
+                    "username": "change-test04",
+                    "department": "AF",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "change-note 4"
+                }
+            }
+        ]
+        cls.edit_user_db_backup = []
+
+        cls.case_delete_user_data = [
+            {
+                "input": {
+                    "full_name": "Auto test *user5",
+                    "email": "auto-test-5@gmail.com",
+                    "username": "test05",
+                    "department": "Marketing",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 5"
+                }
+            },
+            {
+                "input": {
+                    "full_name": "Auto test *user6",
+                    "email": "auto-test-6@gmail.com",
+                    "username": "test06",
+                    "department": "AF",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 6"
+                }
+            }
+        ]
+        cls.delete_user_db_backup = []
+
+        cls.case_verify_user_data = [
+            {
+                "input": {
+                    "full_name": "Auto test *user9",
+                    "email": "auto-test-9@gmail.com",
+                    "username": "test09",
+                    # "department": "Marketing",
+                    # "role": "Manager",
+                    "status": "Active",
+                    "note": "note 9"
+                },
+                "validate": [
+                    "Please select department", "Please enter role"
+                ]
+            },
+            {
+                "input": {
+                    "full_name": "Auto test *user10",
+                    "email": "auto-test-10@gmail.com",
+                    # "username": "test010",
+                    "department": "AF",
+                    "role": "Manager",
+                    "status": "Active",
+                    "note": "note 10"
+                },
+                "validate": [
+                    "Please enter username"
+                ]
+            }
+        ]
+
+        # Playwright setup
         playwright = sync_playwright().start()
         cls.browser = playwright.chromium.launch(headless=False)
         cls.context = cls.browser.new_context()
         cls.page = cls.context.new_page()
-
-        user_data = [
-            {
-                "full_name": "Auto test user 8",
-                "email": "testlm008@gmail.com",
-                "username": "testlm008",
-                "department": "PR",
-                "role": "Interviewer",
-                "status":"Active",
-                "note": "test note 8",
-            },
-            {
-                "full_name": "Auto test user 9",
-                "email": "testlm009@gmail.com",
-                "username": "testlm009",
-                "department": "Marketing",
-                "role": "Admin",
-                "status":"Active",
-                "note": "test node 9",
-            },
-        ]
-
-        cls.user_data = user_data
-        cls.user_ids = []
 
         try:
             cls.db_params = {
@@ -46,317 +150,462 @@ class TestUser:
                 "password": "woskxn"
             }
             cls.conn = psycopg2.connect(**cls.db_params)
-            cls.cursor = cls.conn.cursor()
+            cls.cursor = cls.conn.cursor(cursor_factory=RealDictCursor)
             print("PostgreSQL connection established")
         except (Exception, Error) as error:
             print(f"Error connecting to PostgreSQL: {error}")
 
     def login(self, username='admin', password='123123'):
+        # context = self.browser.new_context()
+
+        # self.page = context.new_page()
         """Login to application"""
-        # self.page.goto("http://103.56.158.135:5173/login")
         self.page.goto("http://localhost:5173/login")
         self.page.fill("input[placeholder='Username']", username)
         self.page.fill("input[placeholder='Password']", password)
         self.page.click("button[type='submit']")
 
-    def test_hr_create_user(self):
-        self.login()
-        user_data = self.__class__.user_data
+    def logout(self):
+        self.page.click(".ant-dropdown-trigger")
+        self.page.click(".ant-dropdown-menu-item:last-child")
 
-        def verify_db(user_data):
-            time.sleep(2)
-            """Verify user data in database"""
-            try:
-                # Add delay to ensure data is saved
-                time.sleep(2)
-                # Query để kiểm tra user trong database
-                verify_query = """
-                    SELECT 
-                      id,
-                      full_name,
-                      email,
-                      department,
-                      role,
-                      note
-                    FROM public.user
-                    WHERE email = %s
-                    LIMIT 1
-                """
-
-                self.cursor.execute(verify_query, (
-                    user_data["email"],
-                ))
-
-                result = self.cursor.fetchone()
-                assert result is not None, f"User {user_data['full_name']} not found in database"
-
-                # Unpack database results
-                (id, db_full_name, db_email, db_department, db_role, db_note) = result
-                self.__class__.user_ids.append(id)
-
-                # Verify essential fields
-                assert db_full_name == user_data["full_name"], \
-                    f"Title mismatch: {db_full_name} != {user_data['full_name']}"
-                
-                # assert self.find(data['full_name']), timeout(5000)
-
-                assert db_email == user_data["email"], \
-                    f"Email mismatch: {db_email} != {user_data['email']}"
-
-                assert db_department == user_data["department"], \
-                    f"Department mismatch: {db_department} != {user_data['department']}"
-
-                assert db_role == user_data["role"], \
-                    f"Role mismatch: {db_role} != {user_data['role']}"
-
-                assert db_note == user_data["note"], \
-                    f"Note mismatch: {db_note} != {user_data['note']}"
-
-                print(f"✓ Verified user in database: {user_data['full_name']}")
-            except AssertionError as ae:
-                print(f"❌ Verification failed: {str(ae)}")
-                raise
-            except Exception as e:
-                print(f"❌ Database verification error: {str(e)}")
-                raise
-
-        def fill_user_form(user_data):
-            try:
-                # Click Add User button
-                self.page.click("text='Add User'")
-                self.page.click(
-                    "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
-                self.page.click(f"div[title='{user_data['department']}']")
-
-                self.page.click(
-                    "form div.ant-form-item:has(> div label:text('Role')) .ant-select-selector")
-                self.page.click(f"div[title='{user_data['role']}']")
-                # Fill full name
-                self.page.fill(
-                    "input[placeholder='Enter full name']", user_data["full_name"])
-                # Fill email
-                self.page.fill(
-                    "input[placeholder='Enter email']", user_data["email"])
-                # Fill username
-                self.page.fill(
-                    "input[placeholder='Enter username']", user_data["username"])
-                #Click status
-                self.page.click(
-                    f"div[data-testid='status-select']")
-                self.page.click(f"div[title='{user_data['status']}']")
-                # Fill note
-                self.page.fill(
-                    "textarea[placeholder='Enter note']", user_data["note"])
-
-                # Click submit
-                self.page.click("button:text('Submit')")
-                print(f"✓ Created user: {user_data['full_name']}")
-
-            except Exception as e:
-                print(f"❌ Error in creating user: {e}")
-                raise
-
+    # create
+    def action_ui_create_user(self, user):
         try:
             self.page.click("a[href='/user']")
-            print("✓ Navigated to Job page")
-            for user in user_data:
-                fill_user_form(user)
-                verify_db(user)
-            print("\n🎉 All users created successfully 🎉")
+
+            self.page.click("text='Add User'")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+            self.page.click(f"div[title='{user['department']}']")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Role')) .ant-select-selector")
+            self.page.click(f"div[title='{user['role']}']")
+            # Fill full name
+            self.page.fill(
+                "input[placeholder='Enter full name']", user["full_name"])
+            # Fill email
+            self.page.fill(
+                "input[placeholder='Enter email']", user["email"])
+            # Fill username
+            self.page.fill(
+                "input[placeholder='Enter username']", user["username"])
+            # Click status
+            self.page.click(
+                f"div[data-testid='status-select']")
+            self.page.click(f"div[title='{user['status']}']")
+            # Fill note
+            self.page.fill(
+                "textarea[placeholder='Enter note']", user["note"])
+            # Click submit
+            self.page.click("button:text('Submit')")
+            print(f"✓ Created user: {user['full_name']}")
         except Exception as e:
-            print(f"\n❌ Test create failed: {e}")
+            print(f"❌ Test action create user {user['full_name']} failed: {e}")
             raise
 
-    def test_hr_edit_user(self):
-        user_data = []
-        for user in self.__class__.user_data:
-            user['full_name'] = 'Change-' + user['full_name']
-            user['email'] = 'change-' + user['email']
-            user['username'] = 'Change-' + user['username']
-            user['department'] = 'AF'
-            user['role'] = 'Manager'
-            user['status'] = "Deactivated"
-            user['note'] = 'Change'
-            user_data.append(user)
+    def verify_db_create_user(self, user):
+        time.sleep(2)
+        try:
+            query = """
+                SELECT 
+                    id,
+                    full_name,
+                    email,
+                    department,
+                    role,
+                    note
+                FROM public.user
+                WHERE email = %s
+                LIMIT 1
+            """
 
-        def fill_user_form(user):
-            try:
-                full_name = user['full_name'].split('-')[1]
-                self.page.click("a[href='/user']")
-                print("✓ Navigated to Interview page")
+            self.cursor.execute(query, (
+                user["email"],
+            ))
+            result = self.cursor.fetchone()
+            assert result is not None, f"User {user['full_name']} not found in database"
+            self.create_user_db_backup.append(result['id'])
+            assert result['full_name'] == user["full_name"], \
+                f"Full name mismatch: {result['full_name']} != {user['full_name']}"
+            assert result['email'] == user["email"], \
+                f"Email mismatch: {result['email']} != {user['email']}"
+            assert result['department'] == user["department"], \
+                f"Department mismatch: {result['department']} != {user['department']}"
+            assert result['role'] == user["role"], \
+                f"Role mismatch: {result['role']} != {user['role']}"
+            assert result['note'] == user["note"], \
+                f"Note mismatch: {result['note']} != {user['note']}"
 
+            print(f"✓ Verified user in database: {user['full_name']}")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_create_user(self):
+        self.login()
+        try:
+            for case in self.case_create_user_data:
+                user = case['input']
+                self.action_ui_create_user(user)
+                self.verify_db_create_user(user)
+
+            print("\n🎉 All users create successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete user failed: {e}")
+            raise
+
+    # edit
+    def get_state_db_edit_user(self, user):
+        """Lấy trạng thái người dùng từ cơ sở dữ liệu"""
+        where_conditions = []
+        values = []
+        for key, value in user.items():
+            where_conditions.append(f"{key} = %s")
+            values.append(value)
+
+        query = f"SELECT * FROM public.user WHERE {' AND '.join(where_conditions)};"
+
+        self.cursor.execute(query, tuple(values))
+        record = self.cursor.fetchone()
+
+        if record:
+            self.edit_user_db_backup.append(record)
+            return record['id']
+        return None
+
+    def action_ui_edit_user(self, id, user):
+        try:
+            self.page.click("a[href='/user']")
+
+            element = self.page.locator(
+                "span.ant-select-selection-item[title='10 / page']")
+            if element.is_visible():
                 self.page.click(
-                    f"td.ant-table-cell:has-text('{full_name}')")
+                    "span.ant-select-selection-item[title='10 / page']")
+                self.page.click(
+                    "div.ant-select-item-option-content:has-text('50 / page')")
+            self.page.click(f"[data-testid-edit='{id}']")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+            self.page.click(f"div[title='{user['department']}']")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Role')) .ant-select-selector")
+            self.page.click(f"div[title='{user['role']}']")
+            # Fill full name
+            self.page.fill(
+                "input[placeholder='Enter full name']", user["full_name"])
+            # Fill email
+            self.page.fill(
+                "input[placeholder='Enter email']", user["email"])
+            # Fill username
+            self.page.fill(
+                "input[placeholder='Enter username']", user["username"])
+            # Click status
+            self.page.click(
+                f"div[data-testid='status-select']")
+            self.page.click(f"div[title='{user['status']}']")
+            # Fill note
+            self.page.fill(
+                "textarea[placeholder='Enter note']", user["note"])
+            # Click submit
+            self.page.click("button:text('Submit')")
+            print(f"\n✓ edit user: {user['full_name']}")
+        except Exception as e:
+            print(f"❌ Test action edit user {user['full_name']} failed: {e}")
+            raise
 
+    def verify_db_edit_user(self, id, user):
+        time.sleep(2)
+        try:
+            query = """
+                SELECT 
+                    id,
+                    full_name,
+                    email,
+                    department,
+                    role,
+                    note
+                FROM public.user
+                WHERE id = %s
+                LIMIT 1
+            """
+
+            self.cursor.execute(query, (id,))
+            result = self.cursor.fetchone()
+            assert result is not None, f"User {user['full_name']} not found in database"
+            assert result['full_name'] == user["full_name"], \
+                f"Full name mismatch: {result['full_name']} != {user['full_name']}"
+            assert result['email'] == user["email"], \
+                f"Email mismatch: {result['email']} != {user['email']}"
+            assert result['department'] == user["department"], \
+                f"Department mismatch: {result['department']} != {user['department']}"
+            assert result['role'] == user["role"], \
+                f"Role mismatch: {result['role']} != {user['role']}"
+            assert result['note'] == user["note"], \
+                f"Note mismatch: {result['note']} != {user['note']}"
+
+            print(f"✓ Verified user in database: {user['full_name']}")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_edit_user(self):
+        # self.login()
+        try:
+            for case in self.case_edit_user_data:
+                input_data = case['input']
+                user_id = self.get_state_db_edit_user(input_data)
+                self.action_ui_edit_user(user_id, case['validate'])
+                self.verify_db_edit_user(user_id, case['validate'])
+
+            print("\n🎉 All users edit successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete user failed: {e}")
+            raise
+
+    # delete
+    def get_state_db_delete_user(self, user):
+        """Lấy trạng thái người dùng từ cơ sở dữ liệu"""
+        where_conditions = []
+        values = []
+        for key, value in user.items():
+            where_conditions.append(f"{key} = %s")
+            values.append(value)
+
+        query = f"SELECT * FROM public.user WHERE {' AND '.join(where_conditions)};"
+
+        self.cursor.execute(query, tuple(values))
+        record = self.cursor.fetchone()
+
+        if record:
+            self.delete_user_db_backup.append(record)
+            return record['id']
+        return None
+
+    def action_ui_delete_user(self, id):
+        try:
+            self.page.click("a[href='/user']")
+
+            element = self.page.locator(
+                "span.ant-select-selection-item[title='10 / page']")
+            if element.is_visible():
+                self.page.click(
+                    "span.ant-select-selection-item[title='10 / page']")
+                self.page.click(
+                    "div.ant-select-item-option-content:has-text('50 / page')")
+            self.page.click(f"[data-testid='{id}']")
+            self.page.click(".ant-btn-primary.ant-btn-sm.ant-btn-dangerous")
+        except Exception as e:
+            print(f"❌ Test action delete user failed: {e}")
+            raise
+
+    def verify_db_delete_user(self, id):
+        query = """
+            SELECT
+                deleted
+            FROM public.user
+            WHERE id = %s
+        """
+        self.cursor.execute(query, (id,))
+        record = self.cursor.fetchone()
+
+        assert str(record['deleted']) != None, \
+            f"Xóa user {id} không thành công"
+
+    def test_delete_user(self):
+        # self.login()
+        try:
+            for case in self.case_delete_user_data:
+                input_data = case['input']
+                user_id = self.get_state_db_delete_user(input_data)
+                self.action_ui_delete_user(user_id)
+                self.verify_db_delete_user(user_id)
+
+            print("\n🎉 All users deleted successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete user failed: {e}")
+            raise
+
+    # verify
+    def action_ui_verify_user(self, user):
+        try:
+            time.sleep(2)
+            self.page.reload()
+            self.page.click("a[href='/user']")
+
+            self.page.click("text='Add User'")
+            if ("department" in user):
                 self.page.click(
                     "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
                 self.page.click(f"div[title='{user['department']}']")
-
+            if ("role" in user):
                 self.page.click(
                     "form div.ant-form-item:has(> div label:text('Role')) .ant-select-selector")
                 self.page.click(f"div[title='{user['role']}']")
-                # Fill full name
+            if ("full_name" in user):
                 self.page.fill(
                     "input[placeholder='Enter full name']", user["full_name"])
-                # Fill email
+            if ("email" in user):
                 self.page.fill(
                     "input[placeholder='Enter email']", user["email"])
-                # Fill username
+            if ("username" in user):
                 self.page.fill(
                     "input[placeholder='Enter username']", user["username"])
-                #Click status
+            if ("status" in user):
                 self.page.click(
                     f"div[data-testid='status-select']")
                 self.page.click(f"div[title='{user['status']}']")
-                # Fill note
+            if ("note" in user):
                 self.page.fill(
                     "textarea[placeholder='Enter note']", user["note"])
-                # Submit form
-                self.page.click("button:text('Submit')")
-                print(f"✓ Edited user: {full_name}")
 
-            except Exception as e:
-                print(f"❌ Error in creating user: {e}")
-                raise
-
-        def verify_db(user):
-            time.sleep(3)
-            try:
-                # Add delay to ensure data is saved
-                time.sleep(2)
-                # Query để kiểm tra user trong database
-                verify_query = """
-                    SELECT 
-                      id,
-                      full_name,
-                      email,
-                      department,
-                      role,
-                      note
-                    FROM public.user
-                    WHERE username = %s
-                    AND email = %s
-                    LIMIT 1
-                """
-
-                self.cursor.execute(verify_query, (
-                    user["username"],
-                    user["email"]
-                ))
-
-                result = self.cursor.fetchone()
-                assert result is not None, f"User {user['full_name']} not found in database"
-
-                # Unpack database results
-                (id, db_full_name, db_email, db_department, db_role, db_note) = result
-                self.__class__.user_ids.append(id)
-
-                # Verify essential fields
-                assert db_full_name == user["full_name"], \
-                    f"Title mismatch: {db_full_name} != {user['full_name']}"
-
-                assert db_email == user["email"], \
-                    f"Email mismatch: {db_email} != {user['email']}"
-
-                assert db_department == user["department"], \
-                    f"Department mismatch: {db_department} != {user['department']}"
-
-                assert db_role == user["role"], \
-                    f"Role mismatch: {db_role} != {user['role']}"
-
-                assert db_note == user["note"], \
-                    f"Note mismatch: {db_note} != {user['note']}"
-
-                print(f"✓ Verified user in database: {user['full_name']}")
-            except AssertionError as ae:
-                print(f"❌ Verification failed: {str(ae)}")
-                raise
-            except Exception as e:
-                print(f"❌ Database verification error: {str(e)}")
-                raise
-
-        try:
-            for user in user_data:
-                fill_user_form(user)
-                verify_db(user)
+            # Click submit
+            self.page.click("button:text('Submit')")
+            print(f"✓ Created user: {user['full_name']}")
         except Exception as e:
-            print(f"\n❌ Test failed: {e}")
+            print(f"❌ Test action create user {user['full_name']} failed: {e}")
             raise
 
-    def test_hr_delete_user(self):
-        user_data = self.__class__.user_data
-
-        def fill_user_form(id):
-            try:
-                self.page.click(f"[data-testid='{id}']")
-                self.page.click(
-                    ".ant-btn-primary.ant-btn-sm.ant-btn-dangerous")
-            except Exception as e:
-                print(f"❌ Error in test delete user: {e}")
-                raise
-
-        def verify_db(user, id):
-            verify_query = """
-                SELECT deleted
-                FROM public.user
-                WHERE id = %s
-            """
-
-            self.cursor.execute(verify_query, (id,))
-
-            result = self.cursor.fetchone()
-
-            (db_delete) = result
-            assert str(db_delete) != None, \
-                f"Xóa {user['full_name']} không thành công"
-
+    def verify_db_verify_user(self, user):
+        time.sleep(2)
         try:
-            self.page.click("a[href='/user']")
-            print("✓ Navigated to Interview page")
-            ids = self.__class__.user_ids
+            for mes in user:
+                locator = self.page.locator(
+                    f"div.ant-form-item-explain-error:has-text('{mes}')")
+                assert locator.count() > 0, \
+                    f"không tìm thấy thông báo validate: {mes}"
 
-            for i in range(len(ids)):
-                fill_user_form(ids[i])
-                verify_db(user_data[i], ids[i])
-
-            print("\n🎉 All users deleted successfully 🎉")
-
+            print(f"✓ Verified offer")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
         except Exception as e:
-            print(f"\n❌ Test failed: {e}")
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_verify_user(self):
+        # self.login()
+        try:
+            for case in self.case_verify_user_data:
+                self.action_ui_verify_user(case['input'])
+                self.verify_db_verify_user(case['validate'])
+
+            print("\n🎉 All users create successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete user failed: {e}")
+            raise
+        self.page.reload()
+        self.logout()
+
+    # role
+    def verify_role(self):
+        time.sleep(2)
+        try:
+            request = self.page.locator(
+                f"a[href='/request']")
+            assert request.count() == 0, \
+                f"Phân quyền truy cập sai /request"
+
+            offer = self.page.locator(
+                f"a[href='/offer']")
+            assert offer.count() == 0, \
+                f"Phân quyền truy cập sai /offer"
+
+            user = self.page.locator(
+                f"a[href='/user']")
+            assert user.count() == 0, \
+                f"Phân quyền truy cập sai /user"
+
+            print(f"✓ Verified role offer")
+        except AssertionError as ae:
+            print(f"❌ Verification role failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ verification error: {str(e)}")
+            raise
+
+    def test_role_user(self):
+
+        self.login("linh.nv1", "123456")
+        try:
+            self.verify_role()
+            print("\n🎉 All users create successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete user failed: {e}")
             raise
 
     @classmethod
-    def teardown_class(cls):
-        """Cleanup test data and close connections"""
+    def backup_create_user(cls):
         try:
-            if cls.conn:
-                # dọn user test
-                user_emails = [user['email'] for user in cls.user_data]
-                delete_users_query = """
-                    DELETE FROM public.user 
-                    WHERE email IN %s
+            ids = cls.create_user_db_backup
+            placeholders = ', '.join(['%s'] * len(ids))
+            delete_query = f"""
+                DELETE FROM public.user
+                WHERE id IN ({placeholders})
+            """
+
+            cls.cursor.execute(delete_query, tuple(ids))
+            cls.conn.commit()
+            print(f"✅ User {ids} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore user: {e}")
+
+    @classmethod
+    def backup_edit_user(cls):
+        try:
+            for user in cls.edit_user_db_backup:
+                columns = ', '.join(user.keys())
+                values = tuple(user.values())
+                update_query = f"""
+                    UPDATE public.user
+                    SET ({columns}) = ({', '.join(['%s'] * len(user))})
+                    WHERE id = %s
                 """
-                cls.cursor.execute(delete_users_query, (tuple(user_emails),))
+                cls.cursor.execute(update_query, (*values, user['id']))
                 cls.conn.commit()
-                print("Test users deleted successfully")
 
-                # xác nhận đã dọn
-                verify_query = """
-                    SELECT id FROM public.user 
-                    WHERE email IN %s
+                print(f"✅ User {user['id']} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore user: {e}")
+
+    @classmethod
+    def backup_delete_user(cls):
+        try:
+            for user in cls.delete_user_db_backup:
+                columns = ', '.join(user.keys())
+                values = tuple(user.values())
+                update_query = f"""
+                    UPDATE public.user
+                    SET ({columns}) = ({', '.join(['%s'] * len(user))})
+                    WHERE id = %s
                 """
-                cls.cursor.execute(verify_query, (tuple(user_emails),))
-                remaining = cls.cursor.fetchall()
-                if not remaining:
-                    print("All test users successfully removed")
-                else:
-                    print(f"Some test users remain: {remaining}")
+                cls.cursor.execute(update_query, (*values, user['id']))
+                cls.conn.commit()
 
+                print(f"✅ User {user['id']} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore user: {e}")
+
+    @classmethod
+    def teardown_class(cls):
+        """Dọn dẹp tài nguyên sau khi kiểm tra xong"""
+        try:
+            cls.backup_create_user()
+            cls.backup_edit_user()
+            cls.backup_delete_user()
+            if cls.conn:
                 cls.cursor.close()
                 cls.conn.close()
                 print("PostgreSQL connection closed")
         except Exception as e:
-            print(f"Cleanup error: {str(e)}")
+            print(f"❌ Cleanup error: {str(e)}")
         finally:
             cls.context.close()
             cls.browser.close()

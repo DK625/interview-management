@@ -1,0 +1,92 @@
+{
+  "create": [
+    {
+      "input": {
+        "full_name": "Auto test user 8",
+        "email": "testlm008@gmail.com",
+        "username": "testlm008",
+        "department": "PR",
+        "role": "Interviewer",
+        "status": "Active",
+        "note": "test note 8"
+      }
+    },
+    {
+      "input": {
+        "full_name": "Auto test user 9",
+        "email": "testlm009@gmail.com",
+        "username": "testlm009",
+        "department": "Marketing",
+        "role": "Admin",
+        "status": "Active",
+        "note": "test node 9"
+      }
+    }
+  ],
+  "edit": [
+    {
+      "input": {
+        "full_name": "Auto test user 8",
+        "email": "testlm008@gmail.com",
+        "username": "testlm008",
+        "department": "PR",
+        "role": "Interviewer",
+        "status": "Active",
+        "note": "test note 8"
+      },
+      "output": {
+        "full_name": "Auto test user 8",
+        "email": "testlm008@gmail.com",
+        "username": "testlm008",
+        "department": "PR",
+        "role": "Interviewer",
+        "status": "Active",
+        "note": "test note 8"
+      }
+    },
+    {
+      "input": {
+        "full_name": "Auto test user 9",
+        "email": "testlm009@gmail.com",
+        "username": "testlm009",
+        "department": "Marketing",
+        "role": "Admin",
+        "status": "Active",
+        "note": "test node 9"
+      },
+      "output": {
+        "full_name": "Auto test user 8",
+        "email": "testlm008@gmail.com",
+        "username": "testlm008",
+        "department": "PR",
+        "role": "Interviewer",
+        "status": "Active",
+        "note": "test note 8"
+      }
+    }
+  ],
+  "delete": [
+    {
+      "input": {
+        "full_name": "Auto test *user5",
+        "email": "auto-test-5@gmail.com",
+        "username": "test05",
+        "department": "Marketing",
+        "role": "Manager",
+        "status": "Active",
+        "note": "note 5"
+      }
+    },
+    {
+      "input": {
+        "full_name": "Auto test *user6",
+        "email": "auto-test-6@gmail.com",
+        "username": "test06",
+        "department": "Marketing",
+        "role": "Manager",
+        "status": "Active",
+        "note": "note 6"
+      }
+    }
+  ]
+}
