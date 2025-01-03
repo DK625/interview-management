@@ -1,0 +1,34 @@
+{
+  "create": [
+    {
+      "candidate": "Võ Anh Thảo",
+      "department": "IT",
+      "interview_schedule_id": "Automation Test Offer 1",
+      "position": "Backend Developer",
+      "manager_id": "hr",
+      "status": "Waiting for approval",
+      "level": "Leader",
+      "type": "Full-time",
+      "contract_from": "2024-01-01",
+      "contract_to": "2025-01-01",
+      "basic_salary": "2000",
+      "currency": "USD",
+      "note": "IT Department offer with competitive package"
+    },
+    {
+      "candidate": "Doan Manh Dat",
+      "department": "PR",
+      "interview_schedule_id": "Automation Test Offer 2",
+      "position": "Business Analyst",
+      "manager_id": "hr",
+      "status": "Waiting for approval",
+      "level": "Manager",
+      "type": "Full-time",
+      "contract_from": "2024-01-01",
+      "contract_to": "2025-01-01",
+      "basic_salary": "1800",
+      "currency": "USD",
+      "note": "PR Department offer with benefits"
+    }
+  ]
+}

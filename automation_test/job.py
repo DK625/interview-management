@@ -3,7 +3,8 @@ import time
 import psycopg2
 from psycopg2 import Error
 from datetime import datetime, timedelta
-
+from psycopg2.extras import RealDictCursor
+import re
 
 class TestJob:
     @classmethod
@@ -14,29 +15,148 @@ class TestJob:
         cls.context = cls.browser.new_context()
         cls.page = cls.context.new_page()
 
-        job_data = [
+        cls.case_create_job_data = [
             {
-                "title": "Auto test job 1",
-                "department": "IT",
-                "position": "Frontend Developer-RQ48",
-                "skills": ["Node.js", "Python", "PostgreSQL"],
-                "salary_from": "2000",
-                "salary_to": "4000",
-                "description": "Looking for experienced backend developer"
+                "input": {
+                    "title": "Auto test *job1",
+                    "department": "IT",
+                    "position": "Frontend Developer-RQ48",
+                    "skills": ["react"],
+                    "salary_from": "2000",
+                    "salary_to": "4000",
+                    "description": "description test 1"
+                },
             },
             {
-                "title": "Auto test job 2",
-                "department": "Marketing",
-                "position": "Business Executive-RQ25",
-                "skills": ["Digital Marketing", "Content Strategy"],
-                "salary_from": "1500",
-                "salary_to": "3000",
-                "description": "Seeking marketing manager with digital experience"
+                "input": {
+                    "title": "Auto test *job2",
+                    "department": "AF",
+                    "position": "Legal Manager-RQ18",
+                    "skills": ["Node.js", "Python"],
+                    "salary_from": "1000",
+                    "salary_to": "2000",
+                    "description": "description test 2"
+                },
             }
         ]
+        cls.create_job_db_backup = []
 
-        cls.job_data = job_data
-        cls.job_ids = []
+        cls.case_edit_job_data = [
+            {
+                "input": {
+                    "title": "Auto test *job2",
+                    "department": "IT",
+                    "position": "Frontend Developer-RQ48",
+                    "skills": ["react"],
+                    "salary_from": "2000",
+                    "salary_to": "4000",
+                    "description": "description test 2"
+                },
+                "validate": {
+                    "title": "change-Auto test *job2",
+                    "department": "AF",
+                    "position": "Legal Manager-RQ18",
+                    "salary_from": "5000",
+                    "salary_to": "6000",
+                    "description": "change-description test 2"
+                }
+            },
+            {
+                "input": {
+                    "title": "Auto test *job3",
+                    "department": "AF",
+                    "position": "Legal Manager-RQ18",
+                    "skills": ["Node.js"],
+                    "salary_from": "1000",
+                    "salary_to": "3000",
+                    "description": "description test 3"
+                },
+                "validate": {
+                    "title": "change-Auto test *job3",
+                    "department": "Marketing",
+                    "position": "Business Executive-RQ25",
+                    "salary_from": "5000",
+                    "salary_to": "6000",
+                    "description": "change-description test 3"
+                }
+            }
+        ]
+        cls.edit_job_db_backup = []
+        cls.case_delete_job_data = [
+            {
+                "input": {
+                    "title": "Auto test *job5",
+                    "department": "IT",
+                    "position": "Frontend Developer-RQ48",
+                    "skills": ["react"],
+                    "salary_from": "2000",
+                    "salary_to": "4000",
+                    "description": "description test 5"
+                },
+            },
+            {
+                "input": {
+                    "title": "Auto test *job6",
+                    "department": "AF",
+                    "position": "Legal Manager-RQ18",
+                    "skills": ["Node.js", "Python"],
+                    "salary_from": "1000",
+                    "salary_to": "2000",
+                    "description": "description test 6"
+                },
+            }
+        ]
+        cls.delete_job_db_backup = []
+
+        cls.case_link_job_data = [
+            {
+                "input": {
+                    "department": "IT",
+                    "position": "Frontend Developer-RQ48",
+                },
+            },
+            {
+                "input": {
+                    "department": "AF",
+                    "position": "Legal Manager-RQ18",
+                },
+            }
+        ]
+        cls.link_job_db_backup = []
+        cls.candidate_db_backup = []
+
+        cls.case_verify_job_data = [
+            {
+                "input": {
+                    "title": "Auto test *job9",
+                    # "department": "IT",
+                    # "position": "Frontend Developer-RQ48",
+                    # "skills": ["react"],
+                    "salary_from": "2000",
+                    "salary_to": "8000",
+                    "description": "description test 9"
+                },
+                "validate": [
+                    "Please select department", "Please enter position", "Please enter skill",
+                    "Please enter start date", "Please enter end date", "Please select level",
+                    "Please select status"
+                ]
+            },
+            {
+                "input": {
+                    "title": "Auto test *job10",
+                    "department": "HR",
+                    "position": "Training Specialist-RQ12",
+                    # "skills": ["react"],
+                    # "salary_from": "2000",
+                    # "salary_to": "6000",
+                    "description": "description test 10"
+                },
+                "validate": [
+                    "Please enter skill"
+                ]
+            },
+        ]
 
         try:
             cls.db_params = {
@@ -46,370 +166,514 @@ class TestJob:
                 "password": "woskxn"
             }
             cls.conn = psycopg2.connect(**cls.db_params)
-            cls.cursor = cls.conn.cursor()
+            cls.cursor = cls.conn.cursor(cursor_factory=RealDictCursor)
             print("PostgreSQL connection established")
         except (Exception, Error) as error:
             print(f"Error connecting to PostgreSQL: {error}")
 
     def login(self, username='admin', password='123123'):
         """Login to application"""
-        self.page.goto("http://103.56.158.135:5173/login")
-        # self.page.goto("http://localhost:5173/login")
+        self.page.goto("http://localhost:5173/login")
         self.page.fill("input[placeholder='Username']", username)
         self.page.fill("input[placeholder='Password']", password)
         self.page.click("button[type='submit']")
+    # create
 
-    def test_hr_create_job(self):
-        self.login()
-        job_data = self.__class__.job_data
-
-        def verify_db(job_data):
-            """Verify job data in database"""
-            try:
-                # Add delay to ensure data is saved
-                time.sleep(2)
-                # Query để kiểm tra job trong database
-                verify_query = """
-                    SELECT 
-                        j.id,
-                        j.title,
-                        j.department,
-                        j.position,
-                        j.skills,
-                        j.salary_from,
-                        j.salary_to,
-                        j.description
-                    FROM public.job j
-                    WHERE j.title = %s
-                    AND j.department = %s
-                    ORDER BY j.created_date DESC
-                    LIMIT 1
-                """
-
-                self.cursor.execute(verify_query, (
-                    job_data["title"],
-                    job_data["department"]
-                ))
-
-                result = self.cursor.fetchone()
-                assert result is not None, f"Job {job_data['title']} not found in database"
-
-                # Unpack database results
-                (id,db_title, db_department, db_position, db_skills,
-                 db_salary_from, db_salary_to,
-                 db_description) = result
-                self.__class__.job_ids.append(id)
-
-                # Verify essential fields
-                assert db_title == job_data["title"], \
-                    f"Title mismatch: {db_title} != {job_data['title']}"
-
-                assert db_department == job_data["department"], \
-                    f"Department mismatch: {db_department} != {job_data['department']}"
-
-                assert db_position == job_data["position"], \
-                    f"Position mismatch: {db_position} != {job_data['position']}"
-
-                # Verify arrays (skills và level được lưu dưới dạng array trong PostgreSQL)
-                db_skills_set = set(db_skills) if db_skills else set()
-                expected_skills_set = set(job_data["skills"])
-                assert db_skills_set == expected_skills_set, \
-                    f"Skills mismatch: {db_skills_set} != {expected_skills_set}"
-
-                # Verify numeric fields
-                assert float(db_salary_from) == float(job_data["salary_from"]), \
-                    f"Salary from mismatch: {db_salary_from} != {job_data['salary_from']}"
-
-                assert float(db_salary_to) == float(job_data["salary_to"]), \
-                    f"Salary to mismatch: {db_salary_to} != {job_data['salary_to']}"
-
-                assert db_description == job_data["description"], \
-                    f"Description mismatch: {db_description} != {job_data['description']}"
-
-                print(f"✓ Verified job in database: {job_data['title']}")
-            except AssertionError as ae:
-                print(f"❌ Verification failed: {str(ae)}")
-                raise
-            except Exception as e:
-                print(f"❌ Database verification error: {str(e)}")
-                raise
-
-        def fill_job_form(job_data):
-            try:
-                # Click Add Job button
-                self.page.click("text='Add Job'")
-                self.page.click(
-                    "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
-                self.page.click(f"div[title='{job_data['department']}']")
-                self.page.click("[data-testid='select-job-position']")
-                self.page.click(f"div[title='{job_data['position']}']")
-                # Fill Job Title
-                self.page.fill(
-                    "input[placeholder='Enter job title']", job_data["title"])
-
-                # Add Skills
-                # Add Skills
-                for skill in job_data["skills"]:
-                    self.page.click("[data-testid='select-job-skills']")
-                    # Sử dụng data-testid để target chính xác input field
-                    skills_input = "[data-testid='select-job-skills'] .ant-select-selection-search-input"
-                    self.page.fill(skills_input, skill)
-                    self.page.keyboard.press("Enter")
-                    self.page.wait_for_timeout(500)  # Wait for animation
-
-                # Set Start Date
-                # self.page.click("[data-testid='date-job-start']", timeout=1000)
-                # self.page.fill(
-                #     "input[placeholder='Select date']", job_data["start_date"])
-                # self.page.click("[data-testid='date-job-start']")
-
-                # # Click away to close datepicker
-                # self.page.click("text='ADD JOB'")
-
-                # Set End Date
-                # self.page.click("[data-testid='date-job-end']", timeout=1000)
-                # self.page.fill("#layout-multiple-horizontal_end_date",
-                #                job_data["end_date"], timeout=1000)
-
-                # Fill Salary Range
-                self.page.fill(
-                    "form div.ant-form-item:has(> div label:text('Salary from')) input.ant-input-number-input",
-                    job_data["salary_from"])
-                self.page.fill("form div.ant-form-item:has(> div label:text('Salary to')) input.ant-input-number-input",
-                               job_data["salary_to"])
-
-                # Add Benefits
-                # benefits_input = "#layout-multiple-horizontal_benefits .ant-select-selection-search-input"
-                # benefits_input = "[data-testid='select-job-benefits'] .ant-select-selection-search-input"
-                # for benefit in job_data["benefits"]:
-                #     self.page.click(benefits_input, timeout=1000)  # Click để mở dropdown
-                #     self.page.fill(benefits_input, benefit, timeout=1000)  # Fill giá trị
-                #     self.page.keyboard.press("Enter")  # Press Enter để chọn
-
-                # Select Level
-                # self.page.click(
-                #     "form div.ant-form-item:has(> div label:text('Level')) .ant-select-selector")
-                # for level in job_data["level"]:
-                #     self.page.click(f"div[title='{level}']")
-                # self.page.keyboard.press("Escape")
-
-                # Select Status
-                # self.page.click(
-                #     "form div.ant-form-item:has(> div label:text('Status')) .ant-select-selector")
-                # self.page.click(f"div[title='{job_data['status']}']")
-
-                # Fill Working Address
-                # self.page.fill("form div.ant-form-item:has(> div label:text('Address')) input",
-                #                job_data["working_address"])
-
-                # Fill Description
-                self.page.fill("form div.ant-form-item:has(> div label:text('Description')) input",
-                               job_data["description"])
-
-                # Submit form
-                self.page.click("button:text('Submit')")
-                print(f"✓ Created job: {job_data['title']}")
-
-            except Exception as e:
-                print(f"❌ Error in creating job: {e}")
-                raise
-
+    def action_ui_create_job(self, job):
         try:
             self.page.click("a[href='/job']")
-            print("✓ Navigated to Job page")
-            for job in job_data:
-                fill_job_form(job)
-                verify_db(job)
-            print("\n🎉 All jobs created successfully 🎉")
+            
+            self.page.click("text='Add Job'")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+            self.page.click(f"div[title='{job['department']}']")
+            self.page.click("[data-testid='select-job-position']")
+            self.page.click(f"div[title='{job['position']}']")
+            self.page.fill(
+                "input[placeholder='Enter job title']", job["title"])
+            # Add Skills
+            for skill in job["skills"]:
+                self.page.click("[data-testid='select-job-skills']")
+                skills_input = "[data-testid='select-job-skills'] .ant-select-selection-search-input"
+                self.page.fill(skills_input, skill)
+                self.page.keyboard.press("Enter")
+                self.page.wait_for_timeout(500)  # Wait for animation
+            # Fill Salary Range
+            self.page.fill(
+                "form div.ant-form-item:has(> div label:text('Salary from')) input.ant-input-number-input",
+                job["salary_from"])
+            self.page.fill("form div.ant-form-item:has(> div label:text('Salary to')) input.ant-input-number-input",
+                           job["salary_to"])
+            # Fill Description
+            self.page.fill("form div.ant-form-item:has(> div label:text('Description')) input",
+                           job["description"])
+            # Submit form
+            self.page.click("button:text('Submit')")
+            print(f"\n✓ Created job: {job['title']}")
+
         except Exception as e:
-            print(f"\n❌ Test create failed: {e}")
+            print(f"❌ Test action create job {job['full_name']} failed: {e}")
             raise
 
-    def test_hr_edit_job(self):
-        job_data = []
-        for job in self.__class__.job_data:
-            job['title'] = 'Change-' + job['title']
-            job['department'] = 'AF'
-            job['position'] = 'Legal Manager-RQ18'
-            job['skills'] = ["nextJs"],
-            job['salary_from'] = '8000'
-            job['salary_to'] = '9000'
-            job['description'] = 'Change-' + job['title']
-            job_data.append(job)
-
-        def fill_job_form(job):
-            try:
-                title = job['title'].split('-')[1]
-                self.page.click("a[href='/job']")
-                print("✓ Navigated to Interview page")
-
-                self.page.click(
-                    f"td.ant-table-cell:has-text('{title}')")
-                self.page.click(
-                        "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
-                self.page.click(f"div[title='{job['department']}']")
-                self.page.click("[data-testid='select-job-position']")
-                self.page.click(f"div[title='{job['position']}']")
-                # Fill Job Title
-                self.page.fill(
-                    "input[placeholder='Enter job title']", job["title"])
-
-                # Add Skills
-                # for skill in job["skills"]:
-                #     self.page.click("[data-testid='select-job-skills']")
-                #     skills_input = "[data-testid='select-job-skills'] .ant-select-selection-search-input"
-                #     self.page.fill(skills_input, skill)
-                #     self.page.keyboard.press("Enter")
-                #     self.page.wait_for_timeout(500)
-
-                # Fill Salary Range
-                self.page.fill(
-                    "form div.ant-form-item:has(> div label:text('Salary from')) input.ant-input-number-input",
-                    job["salary_from"])
-                self.page.fill("form div.ant-form-item:has(> div label:text('Salary to')) input.ant-input-number-input",
-                               job["salary_to"])
-
-                # Fill Description
-                self.page.fill("form div.ant-form-item:has(> div label:text('Description')) input",
-                               job["description"])
-
-                # Submit form
-                self.page.click("button:text('Submit')")
-                print(f"✓ Edited job: {title}")
-
-            except Exception as e:
-                print(f"❌ Error in creating job: {e}")
-                raise    
-
-        def verify_db(job):
-            self.page.wait_for_timeout(10)
-            verify_query = """
+    def verify_db_create_job(self, job):
+        time.sleep(2)
+        try:
+            query = """
                 SELECT 
-                    j.title,
-                    j.department,
-                    j.position,
-                    j.skills,
-                    j.salary_from,
-                    j.salary_to,
-                    j.description
-                FROM public.job j
-                WHERE j.title = %s
+                    id,
+                    title,
+                    department,
+                    position,
+                    skills,
+                    salary_from,
+                    salary_to,
+                    description
+                FROM public.job
+                WHERE title = %s
+                AND department = %s
                 LIMIT 1
             """
 
-            # Chỉ truyền job["title"] như là một chuỗi, không cần tuple
-            self.cursor.execute(verify_query, (job["title"],))
+            self.cursor.execute(query, (
+                job['title'], job['department']
+            ))
             result = self.cursor.fetchone()
+            assert result is not None, f"Job {job['title']} not found in database"
 
-            (db_title, db_department, db_position, db_skills,
-            db_salary_from, db_salary_to, db_description) = result
+            self.create_job_db_backup.append(result['id'])
 
-            assert db_title == job['title'], \
-                f"Status mismatch: {db_title} != {job['title']}"
+            assert result['title'] == job["title"], \
+                f"title mismatch: {result['title']} != {job['title']}"
+            assert result['department'] == job["department"], \
+                f"department mismatch: {result['department']} != {job['department']}"
+            assert result['position'] == job["position"], \
+                f"position mismatch: {result['position']} != {job['position']}"
 
-            assert db_department == job['department'], \
-                f"Status mismatch: {db_department} != {job['department']}"
+            db_skills_set = set(
+                result['skills']) if result['skills'] else set()
+            expected_skills_set = set(job["skills"])
+            assert db_skills_set == expected_skills_set, \
+                f"skills mismatch: {result['skills']} != {job['skills']}"
 
-            assert db_position == job['position'], \
-                f"Status mismatch: {db_position} != {job['position']}"
+            assert float(result['salary_from']) == float(job["salary_from"]), \
+                f"salary_from mismatch: {result['salary_from']} != {job['salary_from']}"
+            assert float(result['salary_to']) == float(job["salary_to"]), \
+                f"salary_to mismatch: {result['salary_to']} != {job['salary_to']}"
+            assert result['description'] == job["description"], \
+                f"description mismatch: {result['description']} != {job['description']}"
 
-            # assert db_skills == job['skills'], \
-            #     f"Status mismatch: {db_skills} != {job['skills']}"
+            print(f"✓ Verified job in database: {job['title']}")
 
-            assert db_salary_from == int(job['salary_from']), \
-                f"Status mismatch: {db_salary_from} != {job['salary_from']}"
-
-            assert db_salary_to == int(job['salary_to']), \
-                f"Status mismatch: {db_salary_to} != {job['salary_to']}"
-
-            assert db_description == job['description'], \
-                f"Status mismatch: {db_description} != {job['description']}"
-
-            print(f"✓ Verified offer in database for: {job['title']}")
-            return True
-
-        try:
-            for job in job_data:
-                fill_job_form(job)
-                verify_db(job)
         except Exception as e:
-            print(f"\n❌ Test failed: {e}")
+            print(f"❌ Database verification error: {str(e)}")
             raise
 
-    def test_hr_delete_job(self):
-        job_data = self.__class__.job_data
+    def test_create_job(self):
+        self.login()
+        try:
+            for case in self.case_create_job_data:
+                job = case['input']
+                self.action_ui_create_job(job)
+                self.verify_db_create_job(job)
 
-        def fill_job_form(id):
-            try:
-                self.page.click(f"[data-testid='{id}']")
-                self.page.click(
-                    ".ant-btn-primary.ant-btn-sm.ant-btn-dangerous")
-            except Exception as e:
-                print(f"❌ Error in test delete job: {e}")
-                raise
+            print("\n🎉 All jobs create successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete job failed: {e}")
+            raise
 
-        def verify_db(job, id):
-            verify_query = """
-                SELECT deleted
-                FROM public.job
-                WHERE id = %s
-            """
+    # edit
+    def get_state_db_edit_job(self, job):
+        """Lấy trạng thái người dùng từ cơ sở dữ liệu"""
+        where_conditions = []
+        values = []
+        for key, value in job.items():
+            where_conditions.append(f"{key} = %s")
+            values.append(value)
 
-            self.cursor.execute(verify_query, (id,))
+        query = f"SELECT * FROM public.job WHERE {' AND '.join(where_conditions)};"
 
-            result = self.cursor.fetchone()
+        self.cursor.execute(query, tuple(values))
+        record = self.cursor.fetchone()
 
-            (db_delete) = result
-            assert str(db_delete) != None, \
-                f"Xóa {job['title']} không thành công"
+        if record:
+            self.edit_job_db_backup.append(record)
+            return record['id']
+        return None
 
+    def action_ui_edit_job(self, id, job):
         try:
             self.page.click("a[href='/job']")
-            print("✓ Navigated to Interview page")
-            ids = self.__class__.job_ids
+            
+            element = self.page.locator("span.ant-select-selection-item[title='10 / page']")
+            if element.is_visible(): 
+                self.page.click("span.ant-select-selection-item[title='10 / page']")
+                self.page.click("div.ant-select-item-option-content:has-text('50 / page')")
+            self.page.click(f"[data-testid-edit='{id}']")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+            self.page.click(f"div[title='{job['department']}']")
+            self.page.click("[data-testid='select-job-position']")
+            self.page.click(f"div[title='{job['position']}']")
+            # Fill Job Title
+            self.page.fill(
+                "input[placeholder='Enter job title']", job["title"])
+            # Fill Salary Range
+            self.page.fill(
+                "form div.ant-form-item:has(> div label:text('Salary from')) input.ant-input-number-input",
+                job["salary_from"])
+            self.page.fill("form div.ant-form-item:has(> div label:text('Salary to')) input.ant-input-number-input",
+                           job["salary_to"])
+            # Fill Description
+            self.page.fill("form div.ant-form-item:has(> div label:text('Description')) input",
+                           job["description"])
+            # Click submit
+            self.page.click("button:text('Submit')")
+            print(f"\n✓ edit job: {job['title']}")
+        except Exception as e:
+            print(f"❌ Test action edit job {job['title']} failed: {e}")
+            raise
 
-            for i in range(len(ids)):
-                fill_job_form(ids[i])
-                verify_db(job_data[i], ids[i])
+    def verify_db_edit_job(self, id, job):
+        time.sleep(2)
+        try:
+            query = """
+                SELECT 
+                    id,
+                    title,
+                    department,
+                    position,
+                    salary_from,
+                    salary_to,
+                    description
+                FROM public.job
+                WHERE title = %s
+                AND department = %s
+                LIMIT 1
+            """
+
+            self.cursor.execute(query, (
+                job['title'], job['department']
+            ))
+            result = self.cursor.fetchone()
+            assert result is not None, f"Job {job['title']} not found in database"
+
+            assert result['title'] == job["title"], \
+                f"title mismatch: {result['title']} != {job['title']}"
+            assert result['department'] == job["department"], \
+                f"department mismatch: {result['department']} != {job['department']}"
+            assert result['position'] == job["position"], \
+                f"position mismatch: {result['position']} != {job['position']}"
+
+            assert float(result['salary_from']) == float(job["salary_from"]), \
+                f"salary_from mismatch: {result['salary_from']} != {job['salary_from']}"
+            assert float(result['salary_to']) == float(job["salary_to"]), \
+                f"salary_to mismatch: {result['salary_to']} != {job['salary_to']}"
+            assert result['description'] == job["description"], \
+                f"description mismatch: {result['description']} != {job['description']}"
+
+            print(f"✓ Verified job in database: {job['title']}")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_edit_job(self):
+        try:
+            for case in self.case_edit_job_data:
+                input_data = case['input']
+                job_id = self.get_state_db_edit_job(input_data)
+                self.action_ui_edit_job(job_id, case['validate'])
+                self.verify_db_edit_job(job_id, case['validate'])
+
+            print("\n🎉 All jobs edit successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test delete job failed: {e}")
+            raise
+
+    # delete
+    def get_state_db_delete_job(self, job):
+        """Lấy trạng thái người dùng từ cơ sở dữ liệu"""
+        where_conditions = []
+        values = []
+        for key, value in job.items():
+            where_conditions.append(f"{key} = %s")
+            values.append(value)
+
+        query = f"SELECT * FROM public.job WHERE {' AND '.join(where_conditions)};"
+
+        self.cursor.execute(query, tuple(values))
+        record = self.cursor.fetchone()
+
+        if record:
+            self.delete_job_db_backup.append(record)
+            return record['id']
+        return None
+
+    def action_ui_delete_job(self, id):
+        try:
+            self.page.click("a[href='/job']")
+            
+            element = self.page.locator("span.ant-select-selection-item[title='10 / page']")
+            if element.is_visible(): 
+                self.page.click("span.ant-select-selection-item[title='10 / page']")
+                self.page.click("div.ant-select-item-option-content:has-text('50 / page')")
+            self.page.click(f"[data-testid='{id}']")
+            self.page.click(".ant-btn-primary.ant-btn-sm.ant-btn-dangerous")
+        except Exception as e:
+            print(f"❌ Test action delete job failed: {e}")
+            raise
+
+    def verify_db_delete_job(self, id):
+        query = """
+            SELECT
+                deleted
+            FROM public.job
+            WHERE id = %s
+        """
+        self.cursor.execute(query, (id,))
+        record = self.cursor.fetchone()
+
+        assert str(record['deleted']) != None, \
+            f"Xóa job {id} không thành công"
+
+    def test_delete_job(self):
+        try:
+            for case in self.case_delete_job_data:
+                input_data = case['input']
+                job_id = self.get_state_db_delete_job(input_data)
+                self.action_ui_delete_job(job_id)
+                self.verify_db_delete_job(job_id)
 
             print("\n🎉 All jobs deleted successfully 🎉")
-
         except Exception as e:
-            print(f"\n❌ Test failed: {e}")
+            print(f"\n❌ Test delete job failed: {e}")
+            raise
+
+    # link
+    def action_ui_link_job(self, id, job):
+        try:
+            self.page.click("a[href='/job']")
+            
+            self.page.click("text='Add Job'")
+            self.page.click(
+                "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+            self.page.click(f"div[title='{job['department']}']")
+            self.page.click("[data-testid='select-job-position']")
+            self.page.click(f"div[title='{job['position']}']")
+            print(f"\n✓ link job: {id}")
+        except Exception as e:
+            print(
+                f"❌ Test action link job {id} failed: {e}")
+            raise
+
+    def verify_db_link_job(self, id):
+        time.sleep(2)
+        try:
+            start_date = self.page.input_value(
+                "#layout-multiple-horizontal_start_date")
+            end_date = self.page.input_value(
+                "#layout-multiple-horizontal_end_date")
+
+            assert start_date, f"Job {id} not found in start_date"
+            assert end_date, f"Job {id} not found in end_date"
+
+            self.page.reload()
+            self.page.click("a[href='/request']")
+
+            self.page.click(
+                "span.ant-select-selection-item[title='10 / page']")
+            self.page.click(
+                "div.ant-select-item-option-content:has-text('50 / page')")
+
+            date_range = self.page.inner_text(
+                f"tr[data-row-key='{id}'] td:nth-child(8)").strip()
+
+            def format_date(date):
+                try:
+                    return datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m/%Y")
+                except ValueError:
+                    return datetime.strptime(date, "%d/%m/%Y").strftime("%d/%m/%Y")
+
+            formatted_start_date = format_date(start_date)
+            formatted_end_date = format_date(end_date)
+
+            # Kiểm tra date_range khớp với định dạng
+            expected_date_range = f"{formatted_start_date} - {formatted_end_date}"
+            assert date_range == expected_date_range, \
+                f"Status mismatch: {date_range} != {expected_date_range}"
+
+            print(f"✓ Verified job in ui: {id}")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_link_job(self):
+        job_id = None
+        try:
+            for case in self.case_link_job_data:
+                input_data = case['input']
+                match = re.search(r'RQ(\d+)', input_data['position'])
+                if match:
+                    job_id = match.group(1)
+                    self.action_ui_link_job(job_id, input_data)
+                    self.verify_db_link_job(job_id)
+                else:
+                    print(f"❌ Invalid job id: {job_id}")
+            print("\n🎉 All jobs link successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test link job failed: {e}")
+            raise
+
+    # verify
+    def action_ui_verify_job(self, job):
+        try:
+            time.sleep(2)
+            self.page.reload()
+            self.page.click("a[href='/job']")
+            
+            self.page.click("text='Add Job'")
+            if ('title' in job):
+                self.page.fill(
+                    "input[placeholder='Enter job title']", job["title"])
+            if ('department' in job):
+                self.page.click(
+                    "form div.ant-form-item:has(> div label:text('Department')) .ant-select-selector")
+                self.page.click(f"div[title='{job['department']}']")
+            if ('position' in job):
+                self.page.click("[data-testid='select-job-position']")
+                self.page.click(f"div[title='{job['position']}']")
+            if ('skills' in job):
+                for skill in job["skills"]:
+                    self.page.click("[data-testid='select-job-skills']")
+                    skills_input = "[data-testid='select-job-skills'] .ant-select-selection-search-input"
+                    self.page.fill(skills_input, skill)
+                    self.page.keyboard.press("Enter")
+                    self.page.wait_for_timeout(500)
+            if ('salary_from' in job):
+                self.page.fill(
+                    "form div.ant-form-item:has(> div label:text('Salary from')) input.ant-input-number-input",
+                    job["salary_from"])
+            if ('salary_to' in job):
+                self.page.fill("form div.ant-form-item:has(> div label:text('Salary to')) input.ant-input-number-input",
+                               job["salary_to"])
+            if ('description' in job):
+                self.page.fill("form div.ant-form-item:has(> div label:text('Description')) input",
+                               job["description"])
+
+            # Submit form
+            self.page.click("button:text('Submit')")
+            print(f"\n✓ verify job: {id}")
+        except Exception as e:
+            print(
+                f"❌ Test action verify job {id} failed: {e}")
+            raise
+
+    def verify_db_verify_job(self, job):
+        time.sleep(2)
+        try:
+            for mes in job:
+                locator = self.page.locator(
+                    f"div.ant-form-item-explain-error:has-text('{mes}')")
+                assert locator.count() > 0, \
+                    f"không tìm thấy thông báo validate: {mes}"
+
+            print(f"✓ Verified job")
+        except AssertionError as ae:
+            print(f"❌ Verification failed: {str(ae)}")
+            raise
+        except Exception as e:
+            print(f"❌ Database verification error: {str(e)}")
+            raise
+
+    def test_verify_job(self):
+        try:
+            for case in self.case_verify_job_data:
+                self.action_ui_verify_job(case['input'])
+                self.verify_db_verify_job(case['validate'])
+
+            print("\n🎉 All jobs verify successfully 🎉")
+        except Exception as e:
+            print(f"\n❌ Test verify job failed: {e}")
             raise
 
     @classmethod
-    def teardown_class(cls):
-        """Cleanup test data and close connections"""
+    def backup_verify_job(cls):
         try:
-            if cls.conn:
-                # dọn job test
-                job_title = [job['title'] for job in cls.job_data]
-                delete_jobs_query = """
-                    DELETE FROM public.job 
-                    WHERE title IN %s
+            print(f"✅ Job restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore job: {e}")
+
+    @classmethod
+    def backup_delete_job(cls):
+        try:
+            for job in cls.delete_job_db_backup:
+                columns = ', '.join(job.keys())
+                values = tuple(job.values())
+                update_query = f"""
+                    UPDATE public.job
+                    SET ({columns}) = ({', '.join(['%s'] * len(job))})
+                    WHERE id = %s
                 """
-                cls.cursor.execute(delete_jobs_query, (tuple(job_title),))
+                cls.cursor.execute(update_query, (*values, job['id']))
                 cls.conn.commit()
-                print("Test jobs deleted successfully")
 
-                # xác nhận đã dọn
-                verify_query = """
-                    SELECT title FROM public.job 
-                    WHERE title IN %s
+                print(f"✅ Job {job['id']} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore job: {e}")
+
+    @classmethod
+    def backup_edit_job(cls):
+        try:
+            for job in cls.edit_job_db_backup:
+                columns = ', '.join(job.keys())
+                values = tuple(job.values())
+                update_query = f"""
+                    UPDATE public.job
+                    SET ({columns}) = ({', '.join(['%s'] * len(job))})
+                    WHERE id = %s
                 """
-                cls.cursor.execute(verify_query, (tuple(job_title),))
-                remaining = cls.cursor.fetchall()
-                if not remaining:
-                    print("All test jobs successfully removed")
-                else:
-                    print(f"Some test jobs remain: {remaining}")
+                cls.cursor.execute(update_query, (*values, job['id']))
+                cls.conn.commit()
 
+                print(f"✅ Job {job['id']} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore job: {e}")
+
+    @classmethod
+    def backup_create_job(cls):
+        try:
+            ids = cls.create_job_db_backup
+            placeholders = ', '.join(['%s'] * len(ids))
+            delete_query = f"""
+                DELETE FROM public.job
+                WHERE id IN ({placeholders})
+            """
+
+            cls.cursor.execute(delete_query, tuple(ids))
+            cls.conn.commit()
+            print(f"✅ Job {ids} restored successfully.")
+        except Exception as e:
+            print(f"❌ Failed to restore job: {e}")
+
+    @classmethod
+    def teardown_class(cls):
+        """Dọn dẹp tài nguyên sau khi kiểm tra xong"""
+        try:
+            cls.backup_create_job()
+            cls.backup_edit_job()
+            cls.backup_delete_job()
+            cls.backup_verify_job()
+            if cls.conn:
                 cls.cursor.close()
                 cls.conn.close()
                 print("PostgreSQL connection closed")
         except Exception as e:
-            print(f"Cleanup error: {str(e)}")
+            print(f"❌ Cleanup error: {str(e)}")
         finally:
             cls.context.close()
             cls.browser.close()

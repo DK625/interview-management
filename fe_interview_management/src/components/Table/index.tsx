@@ -39,7 +39,7 @@ const GenericTable = <T extends {}>({
         <Space size="middle">
           {
             onEditItem && role !== 'Interviewer' &&
-            <Button key="edit" className="border border-blue-400 text-blue-400" onClick={() => onEditItem(record)}>
+            <Button key="edit" data-testid-edit={record.id} className="border border-blue-400 text-blue-400" onClick={() => onEditItem(record)}>
               <EditOutlined />
             </Button>
           }
