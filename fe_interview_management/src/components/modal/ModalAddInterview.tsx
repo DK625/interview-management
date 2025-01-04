@@ -125,7 +125,7 @@ export const ModalAddInterview = (props: any) => {
     };
 
     // NEW: Update candidate status only on form submission
-    if (data.candidate_id) {
+    if (initialValues && data.candidate_id) {
       const candidateId = data.candidate_id.value || data.candidate_id;
       let newStatus;
 
@@ -155,6 +155,8 @@ export const ModalAddInterview = (props: any) => {
 
 
   return (
+    console.log('selectedCandidateId: ', selectedCandidateId),
+    console.log('candidateValue: ', candidateValue),
     <Modal
       title={initialValues ? "EDIT INTERVIEW SCHEDULE" : "ADD INTERVIEW SCHEDULE"}
       open={isOpen}
@@ -214,6 +216,7 @@ export const ModalAddInterview = (props: any) => {
             <Select
               options={filteredCandidates}
               data-testid="select-interview-candidate"
+              data-value={selectedCandidateId?.label || ''}
               placeholder="Select candidate"
               showSearch
               onChange={(value) => setSelectedCandidateId(value)}
@@ -282,7 +285,7 @@ export const ModalAddInterview = (props: any) => {
           </Form.Item>
         </div>
         <div className="w-full flex justify-between">
-        <Form.Item
+          <Form.Item
             name="status"
             label="Status:"
             // className="w-1/2"

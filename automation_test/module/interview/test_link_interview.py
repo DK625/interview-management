@@ -121,9 +121,16 @@ class TestLinkInterview:
             self.page.click(f"div[title='Interviewed']")
             self.page.click("[data-testid='select-result']")
             self.page.click(f"div[title='{interview['status']}']")
+
+            candidate_name = self.page.locator("[data-testid='select-interview-candidate']").get_attribute("data-value")
+
             # Submit form
             self.page.click("button:text('Submit')")
-            print(f"\n✓ link interview: {id}")
+            self.page.click("a[href='/candidate']")
+            candidate_status = self.page.locator(f"[data-testid='candidate-status-{candidate_name}']").text_content()
+            assert interview['db_candidate_status'] == candidate_status
+
+            print(f"\n✓ link interview candidate {candidate_name}")
         except Exception as e:
             print(
                 f"❌ Test action link interview {id} failed: {e}")
@@ -169,7 +176,6 @@ class TestLinkInterview:
                 input_data = case['input']
                 interview_id = self.get_state_db_link_interview(input_data)
                 self.action_ui_link_interview(interview_id, case['validate'])
-                self.verify_db_link_interview(interview_id, case['validate'])
 
             print("\n🎉 All interviews link successfully 🎉")
         except Exception as e:

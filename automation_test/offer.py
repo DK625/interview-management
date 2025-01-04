@@ -97,6 +97,7 @@ class TestOffer:
                 },
                 "validate": {
                     "status": "Approved offer",
+                    "db_candidate_status": "Approved offer",
                 },
             },
             {
@@ -107,6 +108,7 @@ class TestOffer:
                 },
                 "validate": {
                     "status": "Rejected offer",
+                    "db_candidate_status": "Rejected offer",
                 },
             }
         ]
@@ -184,7 +186,8 @@ class TestOffer:
 
     def login(self, username='admin', password='123123'):
         """Login to application"""
-        self.page.goto("http://localhost:5173/login")
+        self.page.goto("http://103.56.158.135:5173/login")
+        # self.page.goto("http://localhost:5173/login")
         self.page.fill("input[placeholder='Username']", username)
         self.page.fill("input[placeholder='Password']", password)
         self.page.click("button[type='submit']")
@@ -588,17 +591,21 @@ class TestOffer:
     def action_ui_link_offer(self, id, offer):
         try:
             self.page.click("a[href='/offer']")
-            
+
             element = self.page.locator("span.ant-select-selection-item[title='10 / page']")
-            if element.is_visible(): 
+            if element.is_visible():
                 self.page.click("span.ant-select-selection-item[title='10 / page']")
                 self.page.click("div.ant-select-item-option-content:has-text('50 / page')")
             self.page.click(f"[data-testid-edit='{id}']")
             # Select Status
             self.page.click("[data-testid='select-offer-status']")
             self.page.click(f"div[title='{offer['status']}']")
+            candidate_name = self.page.locator("[data-testid='select-offer-candidate']").get_attribute("data-value")
             # Submit form
             self.page.click("button:text('Submit')")
+            self.page.click("a[href='/candidate']")
+            candidate_status = self.page.locator(f"[data-testid='candidate-status-{candidate_name}']").text_content()
+            assert offer['db_candidate_status'] == candidate_status
             print(f"\n✓ link offer: {id}")
         except Exception as e:
             print(
@@ -645,6 +652,7 @@ class TestOffer:
             for case in self.case_link_offer_data:
                 input_data = case['input']
                 offer_id = self.get_state_db_link_offer(input_data)
+                self.action_ui_link_offer(offer_id, case['validate'])
                 self.verify_db_link_offer(offer_id, case['validate'])
 
             print("\n🎉 All offers link successfully 🎉")

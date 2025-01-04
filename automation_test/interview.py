@@ -204,7 +204,8 @@ class TestInterview:
 
         # self.page = context.new_page()
         """Login to application"""
-        self.page.goto("http://localhost:5173/login")
+        self.page.goto("http://103.56.158.135:5173/login")
+        # self.page.goto("http://localhost:5173/login")
         self.page.fill("input[placeholder='Username']", username)
         self.page.fill("input[placeholder='Password']", password)
         self.page.click("button[type='submit']")
@@ -312,7 +313,7 @@ class TestInterview:
             raise
 
     def test_create_interview(self):
-        # self.login()
+        self.login()
         try:
             for case in self.case_create_interview_data:
                 interview = case['input']
@@ -447,7 +448,6 @@ class TestInterview:
             raise
 
     def test_edit_interview(self):
-        self.login()
         try:
             for case in self.case_edit_interview_data:
                 input_data = case['input']
@@ -507,7 +507,6 @@ class TestInterview:
             f"Xóa interview {id} không thành công"
 
     def test_delete_interview(self):
-        self.login()
         try:
             for case in self.case_delete_interview_data:
                 input_data = case['input']
@@ -567,9 +566,9 @@ class TestInterview:
     def action_ui_link_interview(self, id, interview):
         try:
             self.page.click("a[href='/interview']")
-            
+
             element = self.page.locator("span.ant-select-selection-item[title='10 / page']")
-            if element.is_visible(): 
+            if element.is_visible():
                 self.page.click("span.ant-select-selection-item[title='10 / page']")
                 self.page.click("div.ant-select-item-option-content:has-text('50 / page')")
             self.page.click(f"[data-testid-edit='{id}']")
@@ -578,9 +577,16 @@ class TestInterview:
             self.page.click(f"div[title='Interviewed']")
             self.page.click("[data-testid='select-result']")
             self.page.click(f"div[title='{interview['status']}']")
+
+            candidate_name = self.page.locator("[data-testid='select-interview-candidate']").get_attribute("data-value")
+
             # Submit form
             self.page.click("button:text('Submit')")
-            print(f"\n✓ link interview: {id}")
+            self.page.click("a[href='/candidate']")
+            candidate_status = self.page.locator(f"[data-testid='candidate-status-{candidate_name}']").text_content()
+            assert interview['db_candidate_status'] == candidate_status
+
+            print(f"\n✓ link interview candidate {candidate_name}")
         except Exception as e:
             print(
                 f"❌ Test action link interview {id} failed: {e}")
@@ -620,7 +626,6 @@ class TestInterview:
 
     def test_link_interview(self):
         interview_id = None
-        self.login()
         try:
             for case in self.case_link_interview_data:
                 input_data = case['input']
@@ -712,7 +717,6 @@ class TestInterview:
 
     def test_verify_interview(self):
         interview_id = None
-        self.login()
         try:
             for case in self.case_verify_interview_data:
                 self.action_ui_verify_interview(case['input'])

@@ -35,6 +35,9 @@ const columns = [
     title: 'Status',
     dataIndex: 'status',
     key: 'status',
+    render: (status: string, record: any) => (
+      <span data-testid={`candidate-status-${record.full_name}`}>{status}</span>
+    )
   }
 ];
 export const CandidatePage = () => {

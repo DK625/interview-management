@@ -18,6 +18,7 @@ class TestLinkOffer:
                 },
                 "validate": {
                     "status": "Approved offer",
+                    "db_candidate_status": "Approved offer",
                 },
             },
             {
@@ -28,6 +29,7 @@ class TestLinkOffer:
                 },
                 "validate": {
                     "status": "Rejected offer",
+                    "db_candidate_status": "Rejected offer",
                 },
             }
         ]
@@ -113,8 +115,12 @@ class TestLinkOffer:
             # Select Status
             self.page.click("[data-testid='select-offer-status']")
             self.page.click(f"div[title='{offer['status']}']")
+            candidate_name = self.page.locator("[data-testid='select-offer-candidate']").get_attribute("data-value")
             # Submit form
             self.page.click("button:text('Submit')")
+            self.page.click("a[href='/candidate']")
+            candidate_status = self.page.locator(f"[data-testid='candidate-status-{candidate_name}']").text_content()
+            assert offer['db_candidate_status'] == candidate_status
             print(f"\n✓ link offer: {id}")
         except Exception as e:
             print(

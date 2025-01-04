@@ -62,6 +62,8 @@ export const ModalAddOffer = (props: any) => {
   }, [user]);
 
   const [form] = useForm();
+  const formValues = Form.useWatch([], form);
+
   const dispatch = useAppDispatch();
 
 
@@ -205,7 +207,17 @@ export const ModalAddOffer = (props: any) => {
           >
             <Select
               data-testid="select-offer-candidate"
-              // options={department ? candidateOptions : []}
+              data-value={(() => {
+                console.log('filteredCandidates:', filteredCandidates);
+                console.log('form values:', formValues);
+
+                // Log ra cả label được tìm thấy
+                const foundLabel = formValues?.candidate?.full_name || '';
+                console.log('Found candidate label:', foundLabel);
+
+                return foundLabel || '';
+              })()}
+
               options={filteredCandidates}
 
               onClick={() => {
